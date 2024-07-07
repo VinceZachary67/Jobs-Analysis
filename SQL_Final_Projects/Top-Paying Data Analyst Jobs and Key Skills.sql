@@ -1,18 +1,16 @@
 -- 1. What are the top paying jobs for my role as data analyst?
--- 2. What are the skills required for these top paying role?
+-- 2. What are the skills required for these top paying data analyst?
 -- 3. What are the most in-demand skills for my role?
 -- 4. what are the top skills based on salary for my role?
 -- 5. What are the most optical skills to learn?
     -- a. Optimal: High demand and High paying
 
--- 1. What are the top paying jobs for my role?
--- Identifying the top paying jobs for my role
+-- 1. What are the top paying jobs as Data Analyst?
+-- Identifying the top paying jobs for Data Analyst
 SELECT 
-    job_id,
-    cd.name as company_name,
-    job_title,
     salary_year_avg,
-    job_location
+    cd.name as company_name,
+    job_title
 FROM
     job_postings_fact
 JOIN
@@ -21,48 +19,44 @@ ON
     job_postings_fact.company_id = cd.company_id
 WHERE
     salary_year_avg is not NULL AND
-    job_title_short = 'Data Analyst' AND
-    job_location = 'Anywhere'
+    job_title_short = 'Data Analyst'
 GROUP BY
-    job_title_short,
     salary_year_avg,
     job_title,
-    job_id,
     cd.name
 ORDER BY
-    4 DESC
+    1 DESC
 LIMIT 10;
 
 -- 2. What are the skills required for these top paying role?
--- Identifying the skills required for each job role
-SELECT
-    jpf.job_title as job_title,
-    jpf.salary_year_avg as avg_yearly_salary,
-    sd.skills as skills
+-- Identifying the skills required for top paying as Data Analyst
+SELECT 
+    sd.skills,
+    jpf.salary_year_avg,
+    cd.name as company_name,
+    jpf.job_title
 FROM
     job_postings_fact as jpf
 JOIN
+    company_dim as cd
+ON
+    jpf.company_id = cd.company_id
+JOIN
     skills_job_dim as sjd
-ON  
+ON
     jpf.job_id = sjd.job_id
 JOIN
     skills_dim as sd
 ON
     sjd.skill_id = sd.skill_id
 WHERE
-    jpf.job_title_short = 'Data Analyst' AND
-    jpf.salary_year_avg is not NULL AND
-    jpf.job_location = 'Anywhere'
-GROUP BY
-    jpf.job_title,
-    jpf.salary_year_avg,
-    sd.skills,
-    jpf.job_id
+    jpf.salary_year_avg IS NOT NULL AND
+    jpf.job_title_short = 'Data Analyst'
 ORDER BY
-    2 DESC
-LIMIT 5;
+    jpf.salary_year_avg DESC
+LIMIT 10;
 
--- 3. What are the most in-demand skills for my role?
+-- 3. What are the most in-demand skills as Data Analyst?
 -- Identifying the most required skill for my role
 WITH job_count AS (
     SELECT
@@ -86,7 +80,8 @@ WITH job_count AS (
     ON
         jpf.company_id = cd.company_id
     WHERE
-        jpf.job_title_short = 'Data Analyst' 
+        jpf.job_title_short = 'Data Analyst' AND
+        jpf.salary_year_avg is not NULL
     GROUP BY
         jpf.job_title,
         jpf.salary_year_avg,
@@ -105,9 +100,9 @@ GROUP BY
     skills
 ORDER BY
     job_count DESC
-LIMIT 5;
+LIMIT 10;
 
--- 4. what are the top skills based on salary for my role?
+-- 4. what are the top skills based on salary as Data Analyst?
 -- Identifying top skills based on salary for my role
 SELECT
     sd.skills as skills,
@@ -129,9 +124,9 @@ GROUP BY
     skills
 ORDER BY
     2 DESC
-LIMIT 10;
+LIMIT 20;
 
--- 5. What are the most optical skills to learn?
+-- 5. What are the most optical skills to learn as Data Analyst?
     -- a. Optimal: High demand and High paying
 WITH opt_skill AS (
     SELECT
@@ -147,7 +142,8 @@ WITH opt_skill AS (
     JOIN
         company_dim AS cd ON jpf.company_id = cd.company_id
     WHERE
-        jpf.salary_year_avg IS NOT NULL
+        jpf.salary_year_avg IS NOT NULL AND
+        jpf.job_title_short = 'Data Analyst'
 ),
 
 total_stats AS (
@@ -175,7 +171,7 @@ GROUP BY
 ORDER BY
     overall_score_pct DESC
 LIMIT
-    100;
+    15;
 
 -- Additional Analysis
 -- Most Optimal Skills as Data Analyst for Remote Jobs
@@ -224,4 +220,5 @@ GROUP BY
 ORDER BY
     overall_score_pct DESC
 LIMIT
-    100;
+    15;
+
