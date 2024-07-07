@@ -197,28 +197,43 @@ WITH opt_skill AS (
 
 total_stats AS (
     SELECT
-        COUNT(jpf.job_id) AS total_jobs,
-        SUM(jpf.salary_year_avg) AS total_salary
+        COUNT(job_id) AS total_jobs,
+        SUM(salary_year_avg) AS total_salary
     FROM
-        job_postings_fact AS jpf
+        job_postings_fact
     WHERE
-        jpf.salary_year_avg IS NOT NULL
+        salary_year_avg IS NOT NULL
+),
+
+top_10_skills AS (
+    SELECT
+        skills,
+        COUNT(job_id) AS job_offers,
+        ROUND(AVG(salary_year_avg), 2) AS avg_salary,
+        ROUND(COUNT(job_id) * 100.0 / (SELECT total_jobs FROM total_stats), 2) AS job_offers_pct,
+        ROUND(SUM(salary_year_avg) * 100.0 / (SELECT total_salary FROM total_stats), 2) AS salary_pct,
+        ROUND(((COUNT(job_id) * 100.0 / (SELECT total_jobs FROM total_stats)) + 
+        (SUM(salary_year_avg) * 100.0 / (SELECT total_salary FROM total_stats))) / 2, 2) AS overall_score_pct
+    FROM
+        opt_skill
+    GROUP BY
+        skills
+    ORDER BY
+        overall_score_pct DESC
+    LIMIT
+        10
 )
 
 SELECT
     skills,
-    COUNT(job_id) AS job_offers,
-    ROUND(AVG(salary_year_avg), 0) AS avg_salary,
-    ROUND(COUNT(job_id) * 100.0 / (SELECT total_jobs FROM total_stats), 2) AS job_offers_pct,
-    ROUND(SUM(salary_year_avg) * 100.0 / (SELECT total_salary FROM total_stats), 2) AS salary_pct,
-    ROUND(((COUNT(job_id) * 100.0 / (SELECT total_jobs FROM total_stats)) + 
-    (SUM(salary_year_avg) * 100.0 / (SELECT total_salary FROM total_stats))) / 2, 2) AS overall_score_pct
+    job_offers,
+    avg_salary,
+    ROUND(job_offers * 100.0 / (SELECT SUM(job_offers) FROM top_10_skills), 2) || '%' AS job_offers_pct,
+    ROUND(avg_salary * job_offers * 100.0 / (SELECT SUM(avg_salary * job_offers) FROM top_10_skills), 2) || '%' AS salary_pct,
+    ROUND((job_offers * 100.0 / (SELECT SUM(job_offers) FROM top_10_skills) + 
+    avg_salary * job_offers * 100.0 / (SELECT SUM(avg_salary * job_offers) FROM top_10_skills)) / 2, 2) || '%' AS overall_score_pct
 FROM
-    opt_skill
-GROUP BY
-    skills
+    top_10_skills
 ORDER BY
-    overall_score_pct DESC
-LIMIT
-    15;
-
+    ROUND((job_offers * 100.0 / (SELECT SUM(job_offers) FROM top_10_skills) + 
+    avg_salary * job_offers * 100.0 / (SELECT SUM(avg_salary * job_offers) FROM top_10_skills)) / 2, 2) DESC;
