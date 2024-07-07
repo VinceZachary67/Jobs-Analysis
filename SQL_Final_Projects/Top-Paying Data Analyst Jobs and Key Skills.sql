@@ -31,7 +31,7 @@ GROUP BY
     cd.name
 ORDER BY
     4 DESC
-LIMIT 5;
+LIMIT 10;
 
 -- 2. What are the skills required for these top paying role?
 -- Identifying the skills required for each job role
