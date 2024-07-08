@@ -229,11 +229,13 @@ SELECT
     job_offers,
     avg_salary,
     ROUND(job_offers * 100.0 / (SELECT SUM(job_offers) FROM top_10_skills), 2) || '%' AS job_offers_pct,
-    ROUND(avg_salary * job_offers * 100.0 / (SELECT SUM(avg_salary * job_offers) FROM top_10_skills), 2) || '%' AS salary_pct,
+    ROUND(avg_salary * 100.0 / (SELECT SUM(avg_salary) FROM top_10_skills), 2) || '%' AS salary_pct,
     ROUND((job_offers * 100.0 / (SELECT SUM(job_offers) FROM top_10_skills) + 
-    avg_salary * job_offers * 100.0 / (SELECT SUM(avg_salary * job_offers) FROM top_10_skills)) / 2, 2) || '%' AS overall_score_pct
+    avg_salary * 100.0 / (SELECT SUM(avg_salary) FROM top_10_skills)) / 2, 2) || '%' AS overall_score_pct
 FROM
     top_10_skills
 ORDER BY
     ROUND((job_offers * 100.0 / (SELECT SUM(job_offers) FROM top_10_skills) + 
-    avg_salary * job_offers * 100.0 / (SELECT SUM(avg_salary * job_offers) FROM top_10_skills)) / 2, 2) DESC;
+    avg_salary * 100.0 / (SELECT SUM(avg_salary) FROM top_10_skills)) / 2, 2) DESC;
+
+
