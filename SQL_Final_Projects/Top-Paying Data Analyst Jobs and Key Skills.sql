@@ -8,7 +8,7 @@
 -- 1. What are the top paying jobs as Data Analyst?
 -- Identifying the top paying jobs for Data Analyst
 SELECT 
-    salary_year_avg,
+    round(salary_year_avg, 0) as annual_avg_salary,
     cd.name as company_name,
     job_title
 FROM
@@ -32,7 +32,7 @@ LIMIT 10;
 -- Identifying the skills required for top paying as Data Analyst
 SELECT 
     sd.skills,
-    jpf.salary_year_avg,
+    ROUND(jpf.salary_year_avg, 0) as salary_year_avg,
     cd.name as company_name,
     jpf.job_title
 FROM
@@ -93,13 +93,13 @@ WITH job_count AS (
 )
 
 SELECT 
-    COUNT(job_id) AS job_count,
+    COUNT(job_id) AS job_offers,
     skills
 FROM job_count
 GROUP BY
     skills
 ORDER BY
-    job_count DESC
+    job_offers DESC
 LIMIT 10;
 
 -- 4. what are the top skills based on salary as Data Analyst?
@@ -154,24 +154,40 @@ total_stats AS (
         job_postings_fact AS jpf
     WHERE
         jpf.salary_year_avg IS NOT NULL
+),
+
+top_10_skills as (
+    SELECT
+        skills,
+        COUNT(job_id) AS job_offers,
+        ROUND(AVG(salary_year_avg), 0) AS avg_salary,
+        ROUND(COUNT(job_id) * 100.0 / (SELECT total_jobs FROM total_stats), 2) AS job_offers_pct,
+        ROUND(SUM(salary_year_avg) * 100.0 / (SELECT total_salary FROM total_stats), 2) AS salary_pct,
+        ROUND(((COUNT(job_id) * 100.0 / (SELECT total_jobs FROM total_stats)) + 
+        (SUM(salary_year_avg) * 100.0 / (SELECT total_salary FROM total_stats))) / 2, 2) AS overall_score_pct
+    FROM
+        opt_skill
+    GROUP BY
+        skills
+    ORDER BY
+        overall_score_pct DESC
+    LIMIT
+        10
 )
 
 SELECT
     skills,
-    COUNT(job_id) AS job_offers,
-    ROUND(AVG(salary_year_avg), 0) AS avg_salary,
-    ROUND(COUNT(job_id) * 100.0 / (SELECT total_jobs FROM total_stats), 2) AS job_offers_pct,
-    ROUND(SUM(salary_year_avg) * 100.0 / (SELECT total_salary FROM total_stats), 2) AS salary_pct,
-    ROUND(((COUNT(job_id) * 100.0 / (SELECT total_jobs FROM total_stats)) + 
-    (SUM(salary_year_avg) * 100.0 / (SELECT total_salary FROM total_stats))) / 2, 2) AS overall_score_pct
+    job_offers,
+    avg_salary,
+    ROUND(job_offers * 100.0 / (SELECT SUM(job_offers) FROM top_10_skills), 2) || '%' AS job_offers_pct,
+    ROUND(avg_salary * 100.0 / (SELECT SUM(avg_salary) FROM top_10_skills), 2) || '%' AS salary_pct,
+    ROUND((job_offers * 100.0 / (SELECT SUM(job_offers) FROM top_10_skills) + 
+    avg_salary * 100.0 / (SELECT SUM(avg_salary) FROM top_10_skills)) / 2, 2) || '%' AS overall_score_pct
 FROM
-    opt_skill
-GROUP BY
-    skills
+    top_10_skills
 ORDER BY
-    overall_score_pct DESC
-LIMIT
-    15;
+    ROUND((job_offers * 100.0 / (SELECT total_jobs FROM total_stats) + 
+    avg_salary * 100.0 / (SELECT total_salary FROM total_stats)) / 2, 2) DESC;
 
 -- Additional Analysis
 -- Most Optimal Skills as Data Analyst for Remote Jobs
